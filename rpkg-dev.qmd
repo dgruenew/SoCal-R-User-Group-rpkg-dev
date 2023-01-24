@@ -1,0 +1,139 @@
+---
+title: "Building R Packages on Easy Mode"
+subtitle: "Southern California R User Group"
+author: "Dave Gruenewald"
+date: "`r lubridate::today()`"
+format: 
+  revealjs:
+    theme: solarized
+---
+
+## R Package Development
+
+::: columns
+::: {.column width="50%"}
+[![R Packages](https://r-pkgs.org/images/cover.png)](https://r-pkgs.org/)
+:::
+
+::: {.column width="50%"}
+### Why an R Package
+
+-   Consolidate R scripts across projects
+-   Streamline R workflows across reporting
+-   Self-documenting & self-testing
+
+. . .
+
+-   Well-designed conventions
+:::
+:::
+
+## Before we embark
+
+```{r eval=FALSE, echo=TRUE}
+install.packages(
+  c("devtools", # `usethis` is included in devtools
+    "roxygen2", 
+    "testthat", 
+    "pkgdown", 
+    "knitr", 
+    "available")
+)
+
+```
+
+## `.Rprofile` example
+
+```{r echo=TRUE}
+usethis::edit_r_profile()
+```
+
+```{r eval=FALSE, echo=TRUE}
+# Load in dev packages as default
+if (interactive()) {
+  suppressMessages(require(devtools))
+  suppressMessages(require(testthat))
+}
+
+# usethis package creation
+options(
+  usethis.full_name = "David Gruenewald",
+  usethis.protocol = "ssh",
+  usethis.description = list(
+    'Authors@R' = 'person(
+      "Dave", "Gruenewald",
+      email = "dave.gruenewald@posit.co",
+      role = c("aut", "cre"))'
+  )
+)
+
+```
+
+[`usethis` setup](https://usethis.r-lib.org/articles/usethis-setup.html)
+
+## Use an available name
+
+Before you begin, check if the title of your package is `available`, appropriate and interesting.
+
+For a simple example, we'll be creating a package that returns randoms quotes for Lord of the Rings 🧙
+
+. . .
+
+```{r echo=TRUE}
+library(available)
+available::available("grond", browse = FALSE)
+```
+
+## Setup Steps
+
+- Create a GitHub repository
+- Checkout a new project from a version control repository
+- `usethis::create_package(".")`
+
+## Check `DESCRIPTION` file
+
+- `usethis::use_mit_license()`
+- `usethis::use_pipe()`
+
+## Add our first R function
+
+::: columns
+::: {.column width="60%"}
+
+```{r eval=FALSE, echo=TRUE}
+
+library(rvest)
+
+lotr_scrape <- rvest::read_html("https://www.goalcast.com/wise-memorable-lord-rings-quotes/") %>% 
+  rvest::html_elements(".single-main-content span") %>% 
+  rvest::html_text2() %>% 
+  stringr::str_remove_all("[“”]") %>% 
+  stringr::str_subset("—$|―$", negate = TRUE) %>%
+  stringr::str_trim() %>% 
+  .[-c(9:12, 81)]
+
+lotr_data <- tibble::tibble(
+  quote = lotr_data[c(TRUE,FALSE)],
+  character = lotr_data[c(FALSE,TRUE)] %>% 
+    stringr::str_remove("—|―") %>% 
+    stringr::str_trim()
+)
+
+lotr_data %>% 
+  dplyr::filter(character == "Gandalf") %>% 
+  dplyr::slice_sample(n = 1) %>% 
+  dplyr::pull(quote)
+
+
+```
+
+:::
+::: {.column width="40%"}
+
+- Scrape [goalcast](https://www.goalcast.com/wise-memorable-lord-rings-quotes/) for Lord of the Rings quotes with `rvest`
+- clean and tidy data to create `lotr_data`
+
+:::
+:::
+
+
